@@ -1,0 +1,70 @@
+
+//+------------------------------------------------------------------+
+//|                                                     Reversal Candles MT5                                                  |
+//|                                 Developer: Forex Robot Easy Team, Website: forexroboteasy.com                       |
+//+------------------------------------------------------------------+
+
+// Indicator initialization function
+int OnInit()
+{
+    //--- Indicator buffers mapping
+    SetIndexBuffer(0, UpArrowBuffer, INDICATOR_DATA);
+    SetIndexBuffer(1, DownArrowBuffer, INDICATOR_DATA);
+
+    //--- Set indicator line labels
+    IndicatorSetString(INDICATOR_SHORTNAME, 'Reversal Candles MT5');
+
+    //--- Indicator buffers direction
+    SetIndexStyle(0, DRAW_ARROW);
+    SetIndexArrow(0, SYMBOL_ARROWUP);
+    SetIndexStyle(1, DRAW_ARROW);
+    SetIndexArrow(1, SYMBOL_ARROWDOWN);
+
+    //--- Customization for user preferred darker color
+    color buyColor = RGB(0, 0, 0); // Black color by default
+    if (IsColorDark(buyColor))
+        IndicatorSetInteger(INDICATOR_DIGITS, 1); // Set indicator digits to 1 if the color is darker
+    else
+        IndicatorSetInteger(INDICATOR_DIGITS, 0); // Set indicator digits to 0 if the color is not darker
+
+    return(INIT_SUCCEEDED);
+}
+
+// Indicator calculation function
+int OnCalculate(const int rates_total, const int prev_calculated, const datetime &time[], const double &open[], const double &high[], const double &low[], const double &close[], const long &tick_volume[], const long &volume[], const int &spread[])
+{
+    //--- Check for indicator buffer overflow
+    if (prev_calculated > rates_total || rates_total < 1)
+        return(0);
+
+    //--- Calculate signals based on color of the last closed candle
+    for (int i = prev_calculated; i < rates_total; i++)
+    {
+        if (close[i] > open[i])
+        {
+            //--- Buy signal
+            if (buyColor != CLR_NONE)
+            {
+                UpArrowBuffer[i] = low[i] - Point; // Display up arrow below the darker colored candle
+                DownArrowBuffer[i] = 0;
+            }
+        }
+        else if (close[i] < open[i])
+        {
+            //--- Sell signal
+            if (buyColor != CLR_NONE)
+            {
+                UpArrowBuffer[i] = 0;
+                DownArrowBuffer[i] = high[i] + Point; // Paint down arrow above the darker colored candle
+            }
+        }
+        else
+        {
+            //--- No signal
+            UpArrowBuffer[i] = 0;
+            DownArrowBuffer[i] = 0;
+        }
+    }
+
+    return(rates_total);
+}
